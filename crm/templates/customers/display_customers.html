@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}Display Customers{% endblock %}
+
+
+{% block content %}
+
+<div class="container mt-4" >
+<div class="container">
+    <div class="card">
+    {% include 'partials/_messages.html' %}
+
+    {% if customers.count %}
+    
+    <div class="row">
+      <div class="col-md-8"></div>
+      <div class="col-md-4"  >
+        
+        <div class="form-group">
+          <input type="text" class="form-control" id="searchField" placeholder="Search">
+        </div>
+      </div>
+    </div>
+
+    <div class="table-responsive" style="overflow-x: auto;
+    max-width: 100%;">
+  <table class="table table-stripped table-hover"  >
+    <thead>
+      <tr>
+        <th style="color: black;">Date</th>
+        <th style="color: black;">Full Name</th>
+        <th style="color: black;">Customer Title</th>
+        <th style="color: black;">Company Name</th>
+        <th style="color: black;">Address</th>
+        <th style="color: black;">City</th>
+        <th style="color: black;">Postal Code</th>
+        <th style="color: black;">Country</th>
+        <th style="color: black;">Phone Number</th> 
+        <th style="color: black;">Email</th>
+        <th></th>
+        <th></th>
+      </tr>
+    </thead>
+ 
+    <tbody id="customersTable">
+      {% for customer in page_obj %}
+      <tr>
+        <td class="date">{{customer.date}}</td>
+        <td class="customername">{{customer.customername}}</td>
+        <td>{{customer.customertitle}}</td>
+        <td class="companyname">{{customer.companyname}}</td>
+        <td>{{customer.address}}</td>
+        <td>{{customer.city}}</td>
+        <td>{{customer.postalcode}}</td>
+        <td class="country">{{customer.country}}</td>
+        <td>{{customer.phone}}</td>
+        <td>{{customer.email}}</td>
+        
+
+        <td> <a href="{% url 'edit_customer' customer.id %}" class="btn btn-secondary btn-sm" >Edit</a > </td>
+        <td> <a href="{% url 'delete_customer' customer.id %}" class="btn btn-danger btn-sm" >Delete</a></td> 
+        
+
+      </tr>
+
+      {% endfor %}
+      
+    </tbody>
+
+  
+  </table>
+    </div>
+
+
+
+<!--
+<p class="no-results" style="display: none;">No results </p>
+    <div class="table-output">
+     
+      <table class="table table-stripped table-hover">
+        <thead>
+          <tr>
+            <th style="color: black;">Date</th>
+            <th style="color: black;">Name</th>
+            <th style="color: black;">Description</th>
+            <th style="color: black;">Unit Of Mesurment</th>
+            <th style="color: black;">Quantity</th>
+            <th style="color: black;">Reorder Point</th>
+            <th style="color: black;">Price</th>
+            <th style="color: black;">Supplier Info</th>
+            <th style="color: black;">Category</th>
+            <th style="color: black;">Comments</th>
+            <th></th>
+          </tr>
+        </thead>
+    
+        <tbody>
+        
+          
+        </tbody>
+      </table>
+   -->
+      
+    <div class="pagination-container">
+    <div class="">
+      Showing page {{page_obj.number}} of {{ page_obj.paginator.num_pages }}
+    </div>
+    <ul class="pagination align-right float-right mr-auto">
+      {% if page_obj.has_previous %}
+      <li {% if page_obj.number == 1 %} class="page-item active" {% endif %}><a class="page-link" href="?page=1">&laquo; 1</a></li>
+      <li class="page-item"> <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+      {% endif %}
+
+      {% if page_obj.has_next %}
+      <li class="page-item"> <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+      <li class="page-item"> <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">{{ page_obj.paginator.num_pages}} &raquo;</a></li>
+      {% endif %}
+
+
+      </ul>
+    {% endif %}
+  </div>
+
+</div>
+</div>
+</div>
+
+
+
+
+<script src="{% static 'js/searchCustomers.js' %}"> </script> 
+
+
+
+{% endblock %}
