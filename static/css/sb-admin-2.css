@@ -2266,7 +2266,7 @@ textarea.form-control {
     margin-bottom: 0;
   }
   .form-inline .form-group {
-    display: flex;
+    
     flex: 0 0 auto;
     flex-flow: row wrap;
     align-items: center;
@@ -4604,6 +4604,8 @@ input[type="button"].btn-block {
   border-top-left-radius: calc(0.35rem - 1px);
   border-top-right-radius: calc(0.35rem - 1px);
 }
+
+
 
 .card-img,
 .card-img-bottom {
@@ -10886,6 +10888,10 @@ form.user .form-control-user {
   font-size: 0.8rem;
   border-radius: 10rem;
   padding: 1.5rem 1rem;
+
+  appearance: none;  /* For styling dropdown arrows */
+  -webkit-appearance: none; /* WebKit browsers */
+  -moz-appearance: none; /* Firefox */
 }
 
 form.user .btn-user {

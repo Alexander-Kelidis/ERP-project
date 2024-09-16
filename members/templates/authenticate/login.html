@@ -21,11 +21,12 @@
    
     
 <form action="" method=POST>
+    {% include 'partials/_messages.html' %}
   {% csrf_token %}
 
 <body class="bg-gradient-primary">
 
-    <div class="container">
+    <div class="container" style="transform: translateY(-65px);">
 
         <!-- Outer Row -->
         <div class="row justify-content-center">
@@ -39,7 +40,8 @@
                             
 
                             <div  class="col-lg-6 ">
-                                <img src="{% static 'userauth.jpg' %}" object-fit="cover" alt="" width="458" height="368">
+                                <img src="{% static 'img/userauth.jpg' %}" alt="User Authentication" style="object-fit: cover; max-width: 100%; margin-left: 30px; margin-top: -18px; margin-bottom: 18px">
+
                             </div>
 
                             <div class="col-lg-6">
@@ -47,9 +49,6 @@
                                     <div class="text-center">
                                         <h1 class="h4 text-gray-900 mb-4">Welcome</h1>
                                     </div>
-
-
-
 
                                     <form class="user">
                                         <div class="form-group">
@@ -65,13 +64,10 @@
                                         </div>
 
 
-                                       
-
-
-                                        <input type="submit" value="submit"  class="btn btn-primary btn-user btn-block">
+                                        <input type="submit" value="Login"  class="btn btn-primary btn-user btn-block">
                                           
-                                      
-                                        <hr>
+                                    
+                                        
                                     </form>
                                     <hr>
                                     <div class="text-center">

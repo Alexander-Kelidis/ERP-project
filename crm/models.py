@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.timezone import now
+from django.conf import settings
 
 # Create your models here.
 
@@ -14,6 +15,7 @@ class Customer(models.Model):
     postalcode = models.CharField('Postal code', max_length=20)
     customertitle = models.CharField('Customer title', max_length=50)
     companyname = models.CharField('Company name', max_length=50)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     
     def __str__(self):
         return (f"{self.customername}") 

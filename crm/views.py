@@ -2,11 +2,12 @@ from django.shortcuts import render,redirect
 from .models import Customer
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.contrib.auth.decorators import login_required
 
 
 # Create your views here.
 
-
+@login_required(login_url="/members/login_user")
 def add_customer(request): 
     context = {
        'values': request.POST
@@ -19,32 +20,32 @@ def add_customer(request):
        customername = request.POST['customername']
 
        if not customername:
-          messages.error(request, 'Name is required')
+          messages.warning(request, 'Name is required')
           return render(request, 'customers/add_customers.html', context)
     
        email = request.POST['email']
 
        if not email:
-          messages.error(request, 'Email is required')
+          messages.warning(request, 'Email is required')
           return render(request, 'customers/add_customers.html', context)   
        
        date = request.POST['date']
 
        if not date:
-          messages.error(request, 'Date is required')
+          messages.warning(request, 'Date is required')
           return render(request, 'customers/add_customers.html', context)
        
 
        phone = request.POST['phone']
     
        if not phone:
-          messages.error(request, 'Phone is required')
+          messages.warning(request, 'Phone is required')
           return render(request, 'customers/add_customers.html', context)
        
        address = request.POST['address']
 
        if not address:
-           messages.error(request, 'Address is required')
+           messages.warning(request, 'Address is required')
            return render(request, 'customers/add_customers.html', context)
        
 
@@ -56,13 +57,14 @@ def add_customer(request):
        
 
 
-       Customer.objects.create(customername=customername,email=email,phone=phone,address=address,date=date,city=city,country=country,postalcode=postalcode,customertitle=customertitle,companyname=companyname) 
+       Customer.objects.create(customername=customername,email=email,phone=phone,address=address,date=date,city=city,country=country,postalcode=postalcode,customertitle=customertitle,companyname=companyname,created_by=request.user) 
        messages.success(request, 'Customer saves successfully')    
 
        return redirect('display_customer') 
     
+@login_required(login_url="/members/login_user")    
 def display_customer(request):
-    customers = Customer.objects.all()
+    customers = Customer.objects.filter(created_by=request.user)
     paginator=Paginator(customers, 3)
     page_number=request.GET.get('page')
     page_obj=Paginator.get_page(paginator,page_number)
@@ -74,10 +76,10 @@ def display_customer(request):
     return render(request, 'customers/display_customers.html', context) 
 
 
-
+@login_required(login_url="/members/login_user")
 def edit_customer(request, id):
-   customer = Customer.objects.get(pk=id)
-   customers = Customer.objects.all()
+   customer = Customer.objects.get(pk=id, created_by=request.user)
+   customers = Customer.objects.filter(created_by=request.user)
    context = {
       'customer': customer,
       'values': customer,
@@ -91,32 +93,32 @@ def edit_customer(request, id):
        customername = request.POST['customername']
 
        if not customername:
-          messages.error(request, 'Name is required')
+          messages.warning(request, 'Customer Name is required')
           return render(request, 'customers/edit_customers.html', context)
     
        email = request.POST['email']
 
        if not email:
-          messages.error(request, 'Email is required')
+          messages.warning(request, 'Email is required')
           return render(request, 'customers/edit_customers.html')   
        
        date = request.POST['date']
 
        if not date:
-          messages.error(request, 'Date is required')
+          messages.warning(request, 'Date is required')
           return render(request, 'customers/edit_customers.html')
        
 
        phone = request.POST['phone']
     
        if not phone:
-          messages.error(request, 'Phone is required')
+          messages.warning(request, 'Phone is required')
           return render(request, 'customers/edit_customers.html')
        
        address = request.POST['address']
 
        if not address:
-          messages.error(request, 'Address is required')
+          messages.warning(request, 'Address is required')
           return render(request, 'customers/edit_customers.html')
        
        
@@ -126,8 +128,6 @@ def edit_customer(request, id):
        customertitle = request.POST['customertitle']
        companyname = request.POST['companyname']
 
-
-     
 
        customer.customername=customername
        customer.email=email
@@ -146,8 +146,9 @@ def edit_customer(request, id):
 
        return redirect('display_customer')   
    
+@login_required(login_url="/members/login_user")   
 def delete_customer(request, id):
-      customer = Customer.objects.get(pk=id)
+      customer = Customer.objects.get(pk=id, created_by=request.user)
       customer.delete()
       messages.success(request, 'Customer removed')
       return redirect('display_customer')   

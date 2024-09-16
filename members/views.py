@@ -12,7 +12,7 @@ def login_user(request):
            login(request, user)
            return redirect('home')
          else:
-          messages.success(request, ("There was an error logging in please try again"))
+          messages.error(request, ("There was an error logging in please try again"))
           return redirect('login')
 
 

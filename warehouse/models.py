@@ -1,9 +1,11 @@
 from django.db import models
 from django.utils.timezone import now
+from django.conf import settings
 
 
 # Create your models here.
 class Product(models.Model):
+    product_id = models.CharField('Product ID', max_length=50, unique=True, null=False, blank=False)
     date = models.DateField(default=now)
     name = models.CharField('Product Name', max_length = 100)
     description = models.CharField('Description Product', max_length = 100)
@@ -12,8 +14,8 @@ class Product(models.Model):
     reorderpoint = models.FloatField('Reorder Point', max_length = 10)
     price = models.FloatField('Price', max_length = 10)
     supplierinfo = models.CharField('Supplier Info', max_length = 100)
-    category = models.CharField('Category', max_length = 100)
     comments = models.CharField('Comments', max_length = 100)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     # image = models.ImageField()
 
     def __str__(self):

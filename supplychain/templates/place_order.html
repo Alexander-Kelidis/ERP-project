@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Place Order{% endblock %}
+
+{% block content %}
+<body class="bg-gradient-primary">
+    <div class="container" style="transform: translateY(-65px);">
+
+        <!-- Display messages -->
+        {% include 'partials/_messages.html' %}
+
+        <!-- Order Form -->
+        <div class="card shadow-lg my-5">
+            <div class="card-body">
+                <div class="text-center">
+                    <h1 class="h4 text-gray-900 mb-4">Place Order</h1>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="order_id">Order ID:</label>
+                        <input type="text" id="order_id" name="order_id" class="form-control form-control-user" placeholder="Enter Order ID" value="{{ next_order_id }}" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="product_id">Product ID:</label>
+                        <input type="text" id="product_id" name="product_id" class="form-control form-control-user" placeholder="Enter Product ID" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="quantity">Quantity:</label>
+                        <input type="text" id="quantity" name="quantity" class="form-control form-control-user" placeholder="Enter Quantity" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-user btn-block">Place Order</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Display Existing Orders -->
+<div class="card shadow-lg my-5">
+    <div class="card-body">
+        <h3>Your Orders</h3>
+        <ul class="list-group">
+            {% for order in user_orders %}
+                <li class="list-group-item">
+                    Order ID: {{ order.id }} - Product: {{ order.product.name }} - Quantity: {{ order.quantity }} - Status: {{ order.status }}
+                </li>
+            {% empty %}
+                <li class="list-group-item">No orders found.</li>
+            {% endfor %}
+        </ul>
+
+        <!-- Pagination Controls -->
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mt-3">
+                {% if user_orders.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ user_orders.previous_page_number }}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+
+                <!-- Current Page and Total Pages -->
+                <li class="page-item disabled">
+                    <a class="page-link">
+                        Page {{ user_orders.number }} of {{ user_orders.paginator.num_pages }}
+                    </a>
+                </li>
+
+                {% if user_orders.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ user_orders.next_page_number }}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ user_orders.paginator.num_pages }}" aria-label="Last">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>
+
+
+    </div>
+</body>
+{% endblock %}

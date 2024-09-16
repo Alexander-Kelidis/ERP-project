@@ -4,9 +4,9 @@ from django.contrib.auth.decorators import login_required
 
 @login_required(login_url="/members/login_user")
 def index(request):
-    all_apps = MyApp.objects.all()
+    my_apps = MyApp.objects.filter(created_by=request.user)
     context = {
-        'my_apps': all_apps,
+        'my_apps': my_apps,
         'page' : request.path
     }
     return render(request, 'website/index.html', context)
@@ -15,9 +15,9 @@ def index(request):
 
 @login_required(login_url="/members/login_user")
 def home(request):
-    all_apps = MyApp.objects.all()
+    my_apps = MyApp.objects.filter(created_by=request.user)
     context = {
-        'my_apps': all_apps,
+        'my_apps': my_apps,
         'page' : request.path
     }
     return render(request, 'website/home.html', context)

@@ -30,6 +30,7 @@
     <thead>
       <tr>
         <th style="color: black;">Date</th>
+        <th style="color: black;">Product id</th>
         <th style="color: black;">Name</th>
         <th style="color: black;">Description</th>
         <th style="color: black;">Unit Of Mesurment</th>
@@ -37,7 +38,6 @@
         <th style="color: black;">Reorder Point</th>
         <th style="color: black;">Price</th>
         <th style="color: black;">Supplier Info</th>
-        <th style="color: black;">Category</th>
         <th style="color: black;">Comments</th>
         <th></th>
       </tr>
@@ -46,7 +46,8 @@
     <tbody id="productsTable">
       {% for product in page_obj %}
       <tr>
-        <td class="date">{{product.date}}</td>
+        <td>{{product.date}}</td>
+        <td class="productid">{{ product.product_id }}</td>
         <td class="name">{{product.name}}</td>
         <td>{{product.description}}</td>
         <td>{{product.unitofmesurment}}</td>
@@ -54,7 +55,6 @@
         <td>{{product.reorderpoint}}</td>
         <td>{{product.price}}</td>
         <td class="supplier">{{product.supplierinfo}}</td>
-        <td>{{product.category}}</td>
         <td>{{product.comments}}</td>
 
 
@@ -129,7 +129,36 @@
 
 
 
- <script src="{% static 'js/searchProducts.js' %}"> </script> 
+<script>
+  console.log('Search script loaded');
+document.addEventListener('DOMContentLoaded', function() {
+    const searchField = document.getElementById('searchField');
+    const table = document.getElementById('productsTable');
+    let rows = table.getElementsByTagName('tr');
+
+    searchField.addEventListener('keyup', function() {
+        const filter = searchField.value.trim().toLowerCase();
+
+        rows = table.getElementsByTagName('tr'); // Update rows on each keyup
+
+        for (let i = 0; i < rows.length; i++) {
+            const nameCell = rows[i].querySelector('.name');
+            const supplierCell = rows[i].querySelector('.supplier');
+            const productIdCell = rows[i].querySelector('.productid'); 
+
+            const nameText = nameCell ? nameCell.textContent.trim().toLowerCase() : '';
+            const supplierText = supplierCell ? supplierCell.textContent.trim().toLowerCase() : '';
+            const productIdText = productIdCell ? productIdCell.textContent.trim().toLowerCase() : ''; // Treat as string 
+
+            // Update the visibility condition to include product_id
+            const isVisible = nameText.includes(filter) || supplierText.includes(filter) || productIdText.includes(filter);
+
+            rows[i].style.display = isVisible ? '' : 'none';
+        }
+    });
+});
+
+</script>
 
 
 

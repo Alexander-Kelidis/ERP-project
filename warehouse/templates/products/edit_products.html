@@ -20,10 +20,15 @@
         <form action="{% url 'edit_product' product.id %}" method="post"> 
             {% include 'partials/_messages.html' %}
             {% csrf_token %}
+            <div class="form-group">
+              <label for="">Date of creation</label>
+              <input type="date" class="form-control form-control-sm" name="date" value="{{values.date}}">
+             </div> 
+        
        <div class="form-group">
-        <label for="">Date of creation</label>
-        <input type="date" class="form-control form-control-sm" name="date" value="{{values.date |date:'Y-m-d' }}">
-       </div> 
+        <label for="">Product Id</label>
+        <input type="text" class="form-control form-control-sm" name="product_id" value="{{values.product_id}}">
+       </div>
 
        <div class="form-group">
         <label for="">Name</label>
@@ -66,11 +71,6 @@
        <div class="form-group">
         <label for="">Supplier Info</label>
         <input type="text" class="form-control form-control-sm" name="supplierinfo" value="{{values.supplierinfo}}">
-       </div> 
-
-       <div class="form-group">
-        <label for="">Category</label>
-        <input type="text" class="form-control form-control-sm" name="category" value="{{values.category}}">
        </div> 
 
        <div class="form-group">

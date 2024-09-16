@@ -1,8 +1,7 @@
 from pathlib import Path
 from dotenv import load_dotenv
 import os
-import django_heroku
-import dj_database_url
+
 
 load_dotenv()
 
@@ -33,8 +32,11 @@ INSTALLED_APPS = [
     'website',
     'members',
     'crm',
+    'supplychain',
     'rest_framework',
 ]
+
+AUTH_USER_MODEL = 'members.CustomUser'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -90,6 +92,11 @@ DATABASES = {
 }
 
 
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_AGE = 3600  # 1 hour of inactivity
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -128,13 +135,15 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 STATICFILES_DIRS = [
-    BASE_DIR / "static",
+    BASE_DIR / 'static',
 ]
 
 
 
-django_heroku.settings(locals())
 
+
+
+#WEB3_PROVIDER_URI = "http://127.0.0.1:7545"  # Your local Ethereum node
 
 
 MEDIA_URL = "/media/"
@@ -142,6 +151,8 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 LOGIN_REDIRECT_URL = '/home'
+
 LOGOUT_REDIRECT_URL = '/members/login_user'
+
 
 

@@ -1,3 +1,4 @@
+
 document.addEventListener('DOMContentLoaded', function() {
     const searchField = document.getElementById('searchField');
     const table = document.getElementById('productsTable');
@@ -11,19 +12,16 @@ document.addEventListener('DOMContentLoaded', function() {
         for (let i = 0; i < rows.length; i++) {
             const nameCell = rows[i].querySelector('.name');
             const supplierCell = rows[i].querySelector('.supplier');
-            const dateCell = rows[i].querySelector('.date');
+            const productIdCell = rows[i].querySelector('.productid'); 
 
             const nameText = nameCell ? nameCell.textContent.trim().toLowerCase() : '';
             const supplierText = supplierCell ? supplierCell.textContent.trim().toLowerCase() : '';
-            const dateText = dateCell ? dateCell.textContent.trim().toLowerCase() : '';
+            const productIdText = productIdCell ? productIdCell.textContent.trim().toLowerCase() : ''; // Treat as string 
 
-            const isVisible = nameText.includes(filter) || supplierText.includes(filter) || dateText.includes(filter);
+            // Update the visibility condition to include product_id
+            const isVisible = nameText.includes(filter) || supplierText.includes(filter) || productIdText.includes(filter);
 
             rows[i].style.display = isVisible ? '' : 'none';
         }
     });
 });
-
-
-    
-  
