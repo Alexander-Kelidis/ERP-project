@@ -25,3 +25,4 @@ class Delivery(models.Model):
 
     def __str__(self):
         return f"Delivery for Order {self.order.id} - Status: {self.delivery_status}"
+

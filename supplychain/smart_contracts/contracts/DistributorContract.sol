@@ -1,52 +1,62 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity ^0.8.17;
 
 import "./DeliveryContract.sol";
 import "./ManufacturerContract.sol";
 
-// Contract for handling distributor operations in a supply chain.
-contract DistributorContract{
-    address public manufacturer;         // Address of the manufacturer
-    address public deliveryContract;     // Address of the delivery contract         // Address of the distributor
+contract DistributorContract {
+    address public manufacturer;
+    address public deliveryContract;
 
-    
-    event OrderProcessed(uint orderId, uint productId, uint quantity, bool isAvailable);   // Event emitted when an order is processed
-    
-    event ManufacturerContacted(uint orderId, uint productId, uint quantity);   // Event emitted when the manufacturer is contacted
+    // Inventory structure to track product quantities
+    struct InventoryItem {
+        uint256 productId;
+        uint256 quantity;
+    }
 
-    
+    // Mapping to track the inventory for each product ID
+    mapping(uint256 => InventoryItem) public inventory;
 
-    // Constructor to initialize the manufacturer and delivery contract addresses
+    event OrderProcessed(uint256 orderId, uint256 productId, uint256 quantity, bool isAvailable);
+    event ManufacturerContacted(uint256 orderId, uint256 productId, uint256 quantity);
+    event InventoryUpdated(uint256 productId, uint256 newQuantity);  // New event for inventory updates
+
     constructor(address _manufacturer, address _deliveryContract) {
         manufacturer = _manufacturer;
         deliveryContract = _deliveryContract;
-      
     }
 
-
     // Function to process an order
-    function processOrder(uint orderId, uint productId, uint quantity) external {
+    function processOrder(uint256 orderId, uint256 productId, uint256 quantity) external {
+        require(quantity > 0, "Quantity must be greater than zero");
+
         // Check inventory availability
-        require(quantity > 0, "Quantity must be greater than zero"); // Validate input quantity
         bool isAvailable = checkInventory(productId, quantity);
         if (isAvailable) {
-            // If available, initiate delivery through the delivery contract.
+            // Initiate delivery if the product is available
             DeliveryContract(deliveryContract).initiateDelivery(orderId, productId, quantity, msg.sender);
-            emit OrderProcessed(orderId, productId, quantity, true);   // Emit an event indicating the order was processed and available.
+            
+            // Update inventory after order processing
+            inventory[productId].quantity -= quantity;
+            emit InventoryUpdated(productId, inventory[productId].quantity);
+            
+            emit OrderProcessed(orderId, productId, quantity, true);
         } else {
-            // If not available, contact the manufacturer to create the product
+            // Contact the manufacturer if the product is not available
             ManufacturerContract(manufacturer).createProduct(orderId, productId, quantity);
-            emit ManufacturerContacted(orderId, productId, quantity);   // Emit an event indicating the manufacturer was contacted.
+            emit ManufacturerContacted(orderId, productId, quantity);
         }
     }
 
+    function checkInventory(uint256 productId, uint256 quantity) public view returns (bool) {
+    // Ensure productId is valid and in stock
+    require(productId > 0, "Invalid productId or out of stock");
+    return inventory[productId].quantity >= quantity;
+}
 
-    // Internal function to check inventory
-    function checkInventory(uint productId, uint quantity) public pure returns (bool) {
-        // Implement inventory check logic here
-        require(productId > 0, "Invalid productId");
-        require(quantity > 0, "Quantity must be greater than zero");
-        return true; // Placeholder for actual inventory check
+
+    // Function to add or update inventory (For demonstration purposes)
+    function updateInventory(uint256 productId, uint256 quantity) external {
+        inventory[productId] = InventoryItem(productId, quantity);
     }
 }

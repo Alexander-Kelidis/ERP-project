@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from .blockchain_service import initiate_delivery,confirm_delivery,update_delivery_status,get_delivery_details,place_order,process_order,check_inventory,create_product
+from .blockchain_service import initiate_delivery,confirm_delivery,update_delivery_status,get_delivery_details,place_order,process_order,check_inventory,create_product,update_inventory_on_blockchain
 from hexbytes import HexBytes
 from web3 import Web3 
 from django.contrib import messages
@@ -11,7 +11,9 @@ from django.contrib.auth.decorators import login_required
 from django.db import models
 from django.core.paginator import Paginator
 from django.db.models import Max
+import logging
 
+logger = logging.getLogger('supplychain')
 
 # Check if the user is a distributor
 def is_distributor(user):
@@ -103,20 +105,33 @@ def update_delivery_status_view(request):
             if new_status not in [0, 1, 2]:
                 raise ValueError("Invalid status value.")
             
-            # Call the function to update the delivery status on the blockchain
-            tx_hash = update_delivery_status(order_id, new_status)
-            
-            # Success message
-            messages.success(request, f"Delivery status updated! Transaction Hash: {tx_hash}")
-        
+            # Fetch all deliveries with the given order_id
+            deliveries = Delivery.objects.filter(order__id=order_id)
+
+            if not deliveries.exists():
+                messages.warning(request, "No delivery found for this order.")
+            else:
+                # Call the function to update the delivery status on the blockchain
+                tx_hash = update_delivery_status(order_id, new_status)
+                
+                # Update the status of each delivery
+                for delivery in deliveries:
+                    status_map = {0: 'in_transit', 1: 'delivered', 2: 'cancelled'}
+                    delivery.delivery_status = status_map.get(new_status, 'unknown')
+                    if new_status == 1:  # If status is 'delivered'
+                        delivery.delivered_at = timezone.now()
+                    delivery.save()
+                
+                # Success message
+                messages.success(request, f"Delivery status updated for {deliveries.count()} deliveries! Transaction Hash: {tx_hash}")
+
         except ValueError as ve:
             messages.warning(request, f"Invalid input: {ve}")
-        except Delivery.DoesNotExist:
-            messages.warning(request, "Delivery does not exist.")
         except Exception as e:
             messages.warning(request, f"An error occurred: {str(e)}")
     
     return render(request, 'update_delivery_status.html')
+
 
 
 @login_required(login_url="/members/login_user") 
@@ -153,17 +168,19 @@ def place_order_view(request):
         quantity = int(request.POST.get('quantity'))
 
         try:
+            logger.debug(f"Product ID from form: {product_id}")
             # Validate the product ID exists in the warehouse
             product = Product.objects.get(product_id=product_id)
+            logger.debug(f"Fetched Product: ID={product_id}, Product ID={product.product_id}, Name={product.name}")
 
             # Call the blockchain service to place the order
-            tx_hash = place_order(next_order_id, product.id, quantity, request.user)  # Pass request.user
+            tx_hash = place_order(next_order_id, product.product_id, quantity, request.user)  # Pass request.user
 
             # Success message
             messages.success(request, f"Order placed successfully with Order ID {next_order_id}! Transaction Hash: {tx_hash}")
 
-            # Update next_order_id after a successful order placement
-            next_order_id += 1
+            # Directly fetch the next order ID again after the order is placed
+            next_order_id = Order.objects.aggregate(max_id=Max('id'))['max_id'] + 1
 
         except Product.DoesNotExist:
             messages.warning(request, "Product does not exist.")
@@ -173,14 +190,14 @@ def place_order_view(request):
     # Fetch the user's orders
     user_orders = Order.objects.filter(retail_store=request.user)
 
-    # Pagination: Create a Paginator object with 5 orders per page
-    paginator = Paginator(user_orders, 3)  # Show 5 orders per page
-    page_number = request.GET.get('page')  # Get the current page number
-    page_obj = paginator.get_page(page_number)  # Get the orders for the current page
+    # Pagination: Create a Paginator object with 3 orders per page
+    paginator = Paginator(user_orders, 3)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
     return render(request, 'place_order.html', {
-        'user_orders': page_obj,  # Use page_obj instead of user_orders
-        'next_order_id': next_order_id  # Pass the next_order_id to the template
+        'user_orders': page_obj,
+        'next_order_id': next_order_id
     })
 
 
@@ -195,10 +212,17 @@ def process_order_view(request):
         quantity = int(request.POST.get('quantity'))
 
         try:
+            # Log the Product ID received from the form
+            logger.debug(f"[Process Order View] Product ID from form: {product_id}")
+
             # Validate the product ID exists in the warehouse
             product = Product.objects.get(product_id=product_id)
+
+            # Log the Product ID from the database
+            logger.debug(f"[Process Order View] Fetched Product from DB: ID={product.id}, Product ID={product.product_id}, Name={product.name}")
+
             # Call the blockchain service to process the order
-            tx_hash = process_order(order_id, product.id, quantity)
+            tx_hash = process_order(order_id, product.product_id, quantity)  # Use product.product_id here
             messages.success(request, f"Order processed successfully! Transaction Hash: {tx_hash}")
 
         except Product.DoesNotExist:
@@ -210,17 +234,25 @@ def process_order_view(request):
 
 
 
+
+
+
+
+
 @login_required(login_url="/members/login_user")
 @user_passes_test(is_distributor)
 def check_inventory_view(request):
-    
     if request.method == 'POST':
         product_id = request.POST.get('product_id')
-        quantity = int(request.POST.get('quantity'))
+        quantity = int(request.POST.get('quantity'))  # Ensure `quantity` is an integer
 
         try:
             # Validate the product ID exists in the warehouse
             product = Product.objects.get(product_id=product_id)
+            
+            # Ensure product.quantity is converted to integer if it's not
+            update_inventory_on_blockchain(product.id, int(product.quantity))
+
             # Call the blockchain service to check inventory
             is_available = check_inventory(product.id, quantity)
             if is_available:
@@ -229,11 +261,15 @@ def check_inventory_view(request):
                 messages.warning(request, "Product is not available.")
 
         except Product.DoesNotExist:
-            messages.warning(request, "Product does not exist.")    
+            messages.warning(request, "Product does not exist.")
         except Exception as e:
             messages.warning(request, f"An error occurred: {str(e)}")
 
     return render(request, 'check_inventory.html')
+
+
+
+
 
 
 @login_required(login_url="/members/login_user")
@@ -256,4 +292,5 @@ def create_product_view(request):
             messages.warning(request, f"An error occurred: {str(e)}")
 
     return render(request, 'create_product.html')  # Return to the form page
+
 

@@ -24,8 +24,12 @@ RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
     && apt-get clean
 
+
+    
 # Step 2: Set the working directory in the container
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y curl
 
 # Step 3: Copy the requirements file into the container at /app
 COPY requirements.txt /app/

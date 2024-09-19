@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'members',
     'crm',
     'supplychain',
+    'notifications',
     'rest_framework',
 ]
 
@@ -61,6 +62,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'notifications.context_processors.notification_count',
             ],
         },
     },
@@ -90,6 +92,48 @@ DATABASES = {
     }
 
 }
+
+# settings.py
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'formatters': {
+        'simple': {
+            'format': '[{levelname}] {asctime} {name}: {message}',
+            'style': '{',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',  # Set to DEBUG to see debug-level messages
+        },
+        # Add loggers for your specific application
+        'supplychain': {
+            'handlers': ['console'],
+            'level': 'DEBUG',  # Set the desired log level
+            'propagate': False,
+        },
+        'blockchain_services': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'event_listener': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
+
 
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'

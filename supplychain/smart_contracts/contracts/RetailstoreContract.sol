@@ -12,7 +12,7 @@ contract RetailStoreContract {
     
 
   
-    event OrderPlaced(uint orderId, uint productId, uint quantity);     // Event emitted when an order is placed
+    event OrderPlaced(uint orderId, uint productId, uint quantity, address retailStore);     // Event emitted when an order is placed
     
     event DeliveryConfirmed(uint orderId);  // Event emitted when the delivery is confirmed
 
@@ -27,8 +27,9 @@ contract RetailStoreContract {
     // Function to place an order
     function placeOrder(uint orderId, uint productId, uint quantity) external {
         require(quantity > 0, "Quantity must be greater than zero"); // Validate input quantity
-        DistributorContract(distributor).processOrder(orderId, productId, quantity);   // Call the processOrder function in the DistributorContract to process the order
-        emit OrderPlaced(orderId, productId, quantity);    // Emit an event indicating the order was placed
+        emit OrderPlaced(orderId, productId, quantity, msg.sender);    // Emit an event indicating the order was placed
+        
+        
     }
 
     // Function to confirm delivery

@@ -7,6 +7,9 @@ from warehouse.models import Product
 from members.models import CustomUser
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+import logging
+
+logger = logging.getLogger('blockchain_services')
 
 # Step 1: Load environment variables from .env (optional)
 from dotenv import load_dotenv
@@ -14,7 +17,7 @@ load_dotenv()
 
 User = get_user_model()
 # Step 2: Connect to the local Ganache blockchain
-ganache_url = os.getenv('WEB3_PROVIDER', 'http://127.0.0.1:8545')  # Default to Ganache CLI port 8545
+ganache_url = os.getenv('WEB3_PROVIDER', 'http://127.0.0.1:7545')  # Default to Ganache CLI port 7545
 web3 = Web3(Web3.HTTPProvider(ganache_url))
 
 # Check if the connection is successful
@@ -184,11 +187,18 @@ def get_delivery_details(order_id):
 def place_order(order_id, product_id, quantity, retail_store_user):
     sender_address = web3.eth.accounts[0]  # Assuming the retail store's account
     
+    # Ensure order_id, product_id, and quantity are integers
+    order_id = int(order_id)
+    product_id = int(product_id)
+    quantity = int(quantity)
+    
+    logging.info(f"Placing order with Product ID: {product_id}, Quantity: {quantity}, Order ID: {order_id}")
+
     # Build the transaction
     transaction = retail_store_contract.functions.placeOrder(
-        order_id,
-        product_id,
-        quantity
+        order_id,  # Ensure this is int
+        product_id,  # Ensure this is int
+        quantity  # Ensure this is int
     ).build_transaction({
         'from': sender_address,
         'nonce': web3.eth.get_transaction_count(sender_address),
@@ -205,7 +215,7 @@ def place_order(order_id, product_id, quantity, retail_store_user):
 
     # Update the order in the database only if the transaction is successful
     try:
-        product = Product.objects.get(id=product_id)
+        product = Product.objects.get(product_id=product_id)
         order = Order.objects.create(
             product=product,
             quantity=quantity,
@@ -223,9 +233,18 @@ def place_order(order_id, product_id, quantity, retail_store_user):
 
 
 
+
+
 def process_order(order_id, product_id, quantity):
-    # Sender's account address (assuming distributor's account)
     sender_address = web3.eth.accounts[1]  # Use the distributor's account in Ganache
+
+    # Log the Product ID
+    logger.debug(f"[Blockchain Service] Product ID for processing order: {product_id}")
+
+    # Convert IDs to integers
+    product_id = int(product_id)
+    order_id = int(order_id)
+    quantity = int(quantity)
 
     # Build the transaction to call the `processOrder` function in the DistributorContract
     transaction = distributor_contract.functions.processOrder(
@@ -246,36 +265,88 @@ def process_order(order_id, product_id, quantity):
     # Send the signed transaction
     tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
 
-    order = Order.objects.get(id=order_id)
-    order.status = 'processed'
-    order.save()
+    try:
+        # Log Product ID again for verification
+        logger.debug(f"[Blockchain Service] Verifying Product ID after sending to blockchain: {product_id}")
+
+        product = Product.objects.get(product_id=product_id)
+        order = Order.objects.get(id=order_id)
+        order.status = 'processed'
+        order.save()
+    
+    except Product.DoesNotExist:
+        raise Exception(f"Product with ID {product_id} does not exist.")
+    except Exception as e:
+        raise Exception(f"Failed to create the order in the database: {str(e)}")
 
     # Return the transaction hash
     return Web3.to_hex(tx_hash)
 
 
+
+
+
+
+
 def check_inventory(product_id, quantity):
-    # Use the distributor's account and private key
+    # Use the distributor's account
     sender_address = web3.eth.accounts[1]  # Distributor's account in Ganache
 
-    # Call checkInventory as a view function
     try:
-        product = Product.objects.get(id=product_id)
-        if product.quantity >= quantity:
-            # Call blockchain function to double-check (if needed)
-            is_available = distributor_contract.functions.checkInventory(
-                product_id,
-                quantity
-            ).call({
-                'from': sender_address  # Specify the sender address
-            })
-            return is_available
-        else:
-            return False  # Not enough quantity in stock
-    except Product.DoesNotExist:
-        raise Exception(f"Product with ID {product_id} does not exist.")
+        # Convert product_id to an integer if it's not already
+        product_id = int(product_id)
+        quantity = int(quantity)
+
+        # Call the blockchain contract's checkInventory function to check availability
+        is_available = distributor_contract.functions.checkInventory(
+            product_id,  # Ensure this is an integer
+            quantity     # Ensure this is an integer
+        ).call({
+            'from': sender_address
+        })
+
+        return is_available
+
+    except ValueError:
+        # Handle the case where conversion to integer fails
+        raise Exception(f"Invalid product ID or quantity provided.")
     except Exception as e:
-        raise Exception(f"Failed to check inventory: {str(e)}")
+        raise Exception(f"Failed to check inventory on the blockchain: {str(e)}")
+
+
+
+def update_inventory_on_blockchain(product_id, quantity):
+    sender_address = web3.eth.accounts[1]  # Distributor's account in Ganache
+
+    # Convert product_id and quantity to integers to match Solidity's `uint256`
+    product_id = int(product_id)
+    quantity = int(quantity)
+
+    # Build the transaction to update inventory
+    transaction = distributor_contract.functions.updateInventory(
+        product_id,
+        quantity
+    ).build_transaction({
+        'from': sender_address,
+        'nonce': web3.eth.get_transaction_count(sender_address),
+        'gas': 2000000,
+        'gasPrice': Web3.to_wei('50', 'gwei')
+    })
+
+    # Sign the transaction with the distributor's private key
+    private_key = os.getenv("PRIVATE_KEY_DISTRIBUTOR")
+    signed_txn = web3.eth.account.sign_transaction(transaction, private_key)
+
+    # Send the signed transaction
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
+
+    return Web3.to_hex(tx_hash)
+
+
+
+
+
+
 
 
 

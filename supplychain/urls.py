@@ -11,7 +11,5 @@ urlpatterns = [
     path('process-order/', views.process_order_view, name='process_order'),
     path('check-inventory/', views.check_inventory_view, name='check_inventory'),
     path('create-product/', views.create_product_view, name='create_product'),
-
-    
     
 ]

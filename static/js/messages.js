@@ -4,5 +4,5 @@ document.addEventListener('DOMContentLoaded', function () {
         messages.forEach(function(message) {
             message.style.display = 'none';
         });
-    }, 4000); // 4000 milliseconds = 4 seconds
+    }, 8000); // 4000 milliseconds = 8 seconds
 });
