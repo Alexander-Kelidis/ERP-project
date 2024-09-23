@@ -14,7 +14,14 @@ contract DeliveryContract {     // Contract for handling delivery operations in 
         DeliveryStatus status;   // Current status of the delivery (e.g., "In Transit", "Delivered")
     }
 
+    struct InventoryItem {
+    uint256 productId;
+    uint256 quantity;
+}
+
+
     mapping(uint => Delivery) public deliveries; // Mapping to store deliveries by orderId
+    mapping(uint256 => InventoryItem) public inventory; // Add inventory mapping here if needed
 
    
     
@@ -28,13 +35,19 @@ contract DeliveryContract {     // Contract for handling delivery operations in 
 
 
 
-    // Function to initiate a delivery
-    function initiateDelivery(uint orderId, uint productId, uint quantity, address retailStore) external  {
-        require(quantity > 0, "Quantity must be greater than 0");
-        deliveries[orderId] = Delivery(orderId, productId, quantity, retailStore, DeliveryStatus.InTransit);  // Create a new delivery entry with status "In Transit"
-        emit DeliveryInitiated(orderId, productId, quantity, retailStore);  // Emit an event for the initiated delivery.
-        emit StatusUpdated(orderId, DeliveryStatus.InTransit);    // Emit an event for the updated status
-    }
+    function initiateDelivery(uint orderId, uint productId, uint quantity, address retailStore) external {
+    require(quantity > 0, "Quantity must be greater than 0");
+
+    Delivery storage delivery = deliveries[orderId];
+    require(delivery.status == DeliveryStatus.Cancelled || delivery.status == DeliveryStatus(0), "Delivery has already been initiated or delivered");
+
+    // Create a new delivery entry with status "In Transit"
+    deliveries[orderId] = Delivery(orderId, productId, quantity, retailStore, DeliveryStatus.InTransit);
+
+    emit DeliveryInitiated(orderId, productId, quantity, retailStore);  
+    emit StatusUpdated(orderId, DeliveryStatus.InTransit);    
+}
+
 
     
 
@@ -43,6 +56,7 @@ contract DeliveryContract {     // Contract for handling delivery operations in 
         Delivery storage delivery = deliveries[orderId];  // Fetch the delivery details using the orderId.
         require(delivery.retailStore == msg.sender, "Only the assigned retail store can confirm this delivery");   // Ensure that only the assigned retail store can confirm the delivery.
         require(delivery.status == DeliveryStatus.InTransit, "Delivery must be in transit to be confirmed");   // Ensure that delivery is in the correct status for confirmation.
+        
         delivery.status = DeliveryStatus.Delivered;  // Update the status of the delivery to "Delivered".
         emit DeliveryConfirmed(orderId, msg.sender);  // Emit an event to confirm the delivery.
         emit StatusUpdated(orderId, DeliveryStatus.Delivered);   // Emit an event for the updated status.
